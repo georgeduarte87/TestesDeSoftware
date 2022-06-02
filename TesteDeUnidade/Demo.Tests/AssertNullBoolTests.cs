@@ -2,7 +2,7 @@
 
 namespace Demo.Tests
 {
-    public class AssertNullBollTests
+    public class AssertNullBoolTests
     {
         [Fact]
         public void Funcionario_Nome_NaoDeveSerNuloOuVazio()
