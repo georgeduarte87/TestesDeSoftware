@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -20,13 +20,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="01_Traits\" />
     <Folder Include="02_Fixtures\" />
     <Folder Include="03_Order\" />
     <Folder Include="04_DadosHumanos\" />
     <Folder Include="05_Mock\" />
     <Folder Include="06_AutoMock\" />
     <Folder Include="07_FluentAssertions\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Features\Features.csproj" />
   </ItemGroup>
 
 </Project>
