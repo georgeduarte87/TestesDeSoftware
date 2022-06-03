@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Features.Clientes
 {
-    class ClienteService : IClienteService
+    public class ClienteService : IClienteService
     {
         private readonly IClienteRepository _clienteRepository;
         private readonly IMediator _mediator;
