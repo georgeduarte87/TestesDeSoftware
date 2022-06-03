@@ -8,7 +8,7 @@ namespace Features.Tests
     public class ClienteFluentAssertionsTests
     {
         private readonly ClienteTestsAutoMockerFixture _clienteTestsFixture;
-        readonly ITestOutputHelper _outputHelper;
+        readonly ITestOutputHelper _outputHelper;  // Para gerar saida de textos nos resultados de teste
 
         public ClienteFluentAssertionsTests(ClienteTestsAutoMockerFixture clienteTestsFixture,
                                             ITestOutputHelper outputHelper)
@@ -55,6 +55,7 @@ namespace Features.Tests
             result.Should().BeFalse();
             cliente.ValidationResult.Errors.Should().HaveCountGreaterOrEqualTo(1, "deve possuir erros de validação");
 
+            // Paga regar saídas de testos nos resultados dos testes
             _outputHelper.WriteLine($"Foram encontrados {cliente.ValidationResult.Errors.Count} erros nesta validação");
         }
     }
