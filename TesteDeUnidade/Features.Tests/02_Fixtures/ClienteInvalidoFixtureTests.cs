@@ -2,7 +2,7 @@
 using System;
 using Xunit;
 
-namespace Features.Tests._02_Fixtures
+namespace Features.Tests
 {
     [Collection(nameof(ClienteCollection))]
     public class ClienteInValidoFixtureTests
