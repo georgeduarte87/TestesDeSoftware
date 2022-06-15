@@ -31,6 +31,24 @@ namespace NerdStore.Vendas.Domain
             ValorTotal = PedidoItems.Sum(i => i.CalcularValor());
         }
 
+        private bool PedidoItemExistente(PedidoItem item)
+        {
+            return _pedidoitems.Any(p => p.ProdutoId == item.ProdutoId);
+        }
+
+        private void ValidarQuantidadeItemPermitida(PedidoItem item)
+        {
+            var quantidadeItens = item.Quantidade;
+
+            if(PedidoItemExistente(item))
+            {
+                var itemExistente = _pedidoitems.FirstOrDefault(p => p.ProdutoId == item.ProdutoId);
+                quantidadeItens += itemExistente.Quantidade;
+            }
+
+            if(quantidadeItens > MAX_UNIDADES_ITEM) throw new DomainException($"Máximo de {MAX_UNIDADES_ITEM} unidades por produto.");
+        }
+
 
         public void AdicionarItem(PedidoItem pedidoItem)
         {
@@ -39,11 +57,18 @@ namespace NerdStore.Vendas.Domain
             // Movido pós refatoração para classe pedido item
             // if (pedidoItem.Quantidade < Pedido.MIN_UNIDADES_ITEM) throw new DomainException($"Mínimo de {Pedido.MIN_UNIDADES_ITEM} unidades por produto.");
 
-            if (pedidoItem.Quantidade > MAX_UNIDADES_ITEM) throw new DomainException($"Máximo de {MAX_UNIDADES_ITEM} unidades por produto.");
+            //if (pedidoItem.Quantidade > MAX_UNIDADES_ITEM) throw new DomainException($"Máximo de {MAX_UNIDADES_ITEM} unidades por produto.");
 
-            if (_pedidoitems.Any(p => p.ProdutoId == pedidoItem.ProdutoId))
+            ValidarQuantidadeItemPermitida(pedidoItem);
+
+            //if (_pedidoitems.Any(p => p.ProdutoId == pedidoItem.ProdutoId))
+            if (PedidoItemExistente(pedidoItem))
             {
+                //var quantidadeItens = pedidoItem.Quantidade;
                 var itemExistente = _pedidoitems.FirstOrDefault(p => p.ProdutoId == pedidoItem.ProdutoId);
+
+                //if(quantidadeItens + itemExistente.Quantidade > MAX_UNIDADES_ITEM) throw new DomainException($"Máximo de {MAX_UNIDADES_ITEM} unidades por produto.");
+
                 itemExistente.AdicionarUnidades(pedidoItem.Quantidade);
                 pedidoItem = itemExistente;
 
