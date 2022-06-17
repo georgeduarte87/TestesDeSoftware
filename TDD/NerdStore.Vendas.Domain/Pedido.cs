@@ -39,7 +39,7 @@ namespace NerdStore.Vendas.Domain
             CalcularValorTotalDesconto();
         }
 
-        private bool PedidoItemExistente(PedidoItem item)
+        public bool PedidoItemExistente(PedidoItem item)
         {
             return _pedidoitems.Any(p => p.ProdutoId == item.ProdutoId);
         }
