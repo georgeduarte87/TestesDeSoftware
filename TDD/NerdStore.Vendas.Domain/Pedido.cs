@@ -36,6 +36,7 @@ namespace NerdStore.Vendas.Domain
         private void CalcularValorPedido()
         {
             ValorTotal = PedidoItems.Sum(i => i.CalcularValor());
+            CalcularValorTotalDesconto();
         }
 
         private bool PedidoItemExistente(PedidoItem item)
@@ -93,11 +94,11 @@ namespace NerdStore.Vendas.Domain
             {
                 if (Voucher.PercentualDesconto.HasValue)
                 {
-                    desconto = (ValorTotal * Voucher.PercentualDesconto.Value) / 100;                
+                    desconto = (ValorTotal * Voucher.PercentualDesconto.Value) / 100;
                 }
             }
 
-            ValorTotal -= desconto;
+            ValorTotal = ValorTotal < desconto ? 0 : ValorTotal -= desconto;  
             Desconto = desconto;
         }
 
@@ -172,14 +173,5 @@ namespace NerdStore.Vendas.Domain
                 return pedido;
             }
         }
-    }
-
-    public enum PedidoStatus
-    {
-        Rascunho = 0,
-        Iniciado = 1,
-        Pago = 4,
-        Entregue = 5,
-        Cancelado = 6
     }
 }
