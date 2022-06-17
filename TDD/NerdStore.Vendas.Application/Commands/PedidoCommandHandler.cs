@@ -35,10 +35,13 @@ namespace NerdStore.Vendas.Application.Commands
 
             _pedidoRepository.Adicionar(pedido);
 
-            await _mediator.Publish(new PedidoItemAdicionadoEvent(pedido.ClienteId, pedido.Id, message.ProdutoId, message.Nome,
-                                                                  message.Quantidade, message.ValorUnitario), cancellationToken);
+            //await _mediator.Publish(new PedidoItemAdicionadoEvent(pedido.ClienteId, pedido.Id, message.ProdutoId, message.Nome,
+            //                                                      message.Quantidade, message.ValorUnitario), cancellationToken);
 
-            return true;
+            pedido.AdicionarEvento(new PedidoItemAdicionadoEvent(pedido.ClienteId, pedido.Id, message.ProdutoId, message.Nome,
+                                                                 message.Quantidade, message.ValorUnitario));
+
+            return await _pedidoRepository.UnitOfWork.Commit();
         }
     }
 }
