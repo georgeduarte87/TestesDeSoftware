@@ -14,7 +14,7 @@ namespace NerdStore.Vendas.Application.Events
 
         public PedidoItemAdicionadoEvent(Guid clienteid, Guid pedidoId, Guid produtoId, string nomeProduto, int quantidade, decimal valorUnitario)
         {
-            AggregatedId = pedidoId;
+            AggregateId = pedidoId;
             ClienteId = clienteid;
             PedidoId = pedidoId;
             ProdutoId = produtoId;
