@@ -8,73 +8,38 @@ namespace NerdStore.Vendas.Domain
 {
     public class Pedido : Entity, IAggregateRoot
     {
+        // ReSharper disable once InconsistentNaming
         public static int MAX_UNIDADES_ITEM => 15;
         public static int MIN_UNIDADES_ITEM => 1;
 
+        public int Codigo { get; private set; }
         public Guid ClienteId { get; private set; }
-
+        public Guid? VoucherId { get; private set; }
         public decimal ValorTotal { get; private set; }
-
-        public decimal Desconto { get; private set; }
-
         public PedidoStatus PedidoStatus { get; private set; }
-
+        public decimal Desconto { get; private set; }
+        public DateTime DataCadastro { get; private set; }
         public bool VoucherUtilizado { get; private set; }
-
         public Voucher Voucher { get; private set; }
 
-        private readonly List<PedidoItem> _pedidoitems;
-
-        public IReadOnlyCollection<PedidoItem> PedidoItems => _pedidoitems;
-
+        private readonly List<PedidoItem> _pedidoItems;
+        public IReadOnlyCollection<PedidoItem> PedidoItems => _pedidoItems;
 
         protected Pedido()
         {
-            _pedidoitems = new List<PedidoItem>();
+            _pedidoItems = new List<PedidoItem>();
         }
-
-        private void CalcularValorPedido()
-        {
-            ValorTotal = PedidoItems.Sum(i => i.CalcularValor());
-            CalcularValorTotalDesconto();
-        }
-
-        public bool PedidoItemExistente(PedidoItem item)
-        {
-            return _pedidoitems.Any(p => p.ProdutoId == item.ProdutoId);
-        }
-
-        private void ValidarQuantidadeItemPermitida(PedidoItem item)
-        {
-            var quantidadeItens = item.Quantidade;
-
-            if(PedidoItemExistente(item))
-            {
-                var itemExistente = _pedidoitems.FirstOrDefault(p => p.ProdutoId == item.ProdutoId);
-                quantidadeItens += itemExistente.Quantidade;
-            }
-
-            if(quantidadeItens > MAX_UNIDADES_ITEM) throw new DomainException($"Máximo de {MAX_UNIDADES_ITEM} unidades por produto.");
-        }
-
-        private void ValidarPedidoItemInexistente(PedidoItem pedidoItem)
-        {
-            if (!PedidoItemExistente(pedidoItem)) throw new DomainException("O item não existe no pedido");
-        }
-
 
         public ValidationResult AplicarVoucher(Voucher voucher)
         {
-            var result = voucher.ValidarSeAplicavel();
-            if (!result.IsValid) return result;
+            var validationResult = voucher.ValidarSeAplicavel();
+            if (!validationResult.IsValid) return validationResult;
 
             Voucher = voucher;
             VoucherUtilizado = true;
+            CalcularValorPedido();
 
-            //ValorTotal -= voucher.ValorDesconto.Value;  Antes de refatorar
-            CalcularValorTotalDesconto();
-
-            return result;
+            return validationResult;
         }
 
         public void CalcularValorTotalDesconto()
@@ -82,77 +47,102 @@ namespace NerdStore.Vendas.Domain
             if (!VoucherUtilizado) return;
 
             decimal desconto = 0;
+            var valor = ValorTotal;
 
-            if(Voucher.TipoDescontoVoucher == TipoDescontoVoucher.Valor)
+            if (Voucher.TipoDescontoVoucher == TipoDescontoVoucher.Porcentagem)
             {
-                if(Voucher.ValorDesconto.HasValue)
+                if (Voucher.PercentualDesconto.HasValue)
                 {
-                    desconto = Voucher.ValorDesconto.Value;
+                    desconto = (valor * Voucher.PercentualDesconto.Value) / 100;
+                    valor -= desconto;
                 }
             }
             else
             {
-                if (Voucher.PercentualDesconto.HasValue)
+                if (Voucher.ValorDesconto.HasValue)
                 {
-                    desconto = (ValorTotal * Voucher.PercentualDesconto.Value) / 100;
+                    desconto = Voucher.ValorDesconto.Value;
+                    valor -= desconto;
                 }
             }
 
-            ValorTotal = ValorTotal < desconto ? 0 : ValorTotal -= desconto;  
+            ValorTotal = valor < 0 ? 0 : valor;
             Desconto = desconto;
         }
 
-        public void AdicionarItem(PedidoItem pedidoItem)
+        public void CalcularValorPedido()
         {
-            // ValorTotal = 200; Mocando resultado apenas para passar
+            ValorTotal = PedidoItems.Sum(p => p.CalcularValor());
+            CalcularValorTotalDesconto();
+        }
 
-            // Movido pós refatoração para classe pedido item
-            // if (pedidoItem.Quantidade < Pedido.MIN_UNIDADES_ITEM) throw new DomainException($"Mínimo de {Pedido.MIN_UNIDADES_ITEM} unidades por produto.");
+        public bool PedidoItemExistente(PedidoItem item)
+        {
+            return _pedidoItems.Any(p => p.ProdutoId == item.ProdutoId);
+        }
 
-            //if (pedidoItem.Quantidade > MAX_UNIDADES_ITEM) throw new DomainException($"Máximo de {MAX_UNIDADES_ITEM} unidades por produto.");
+        private void ValidarPedidoItemInexistente(PedidoItem item)
+        {
+            if (!PedidoItemExistente(item)) throw new DomainException("O item não pertence ao pedido");
+        }
 
-            ValidarQuantidadeItemPermitida(pedidoItem);
-
-            //if (_pedidoitems.Any(p => p.ProdutoId == pedidoItem.ProdutoId))
-            if (PedidoItemExistente(pedidoItem))
+        private void ValidarQuantidadeItemPermitida(PedidoItem item)
+        {
+            var quantidadeItems = item.Quantidade;
+            if (PedidoItemExistente(item))
             {
-                //var quantidadeItens = pedidoItem.Quantidade;
-                var itemExistente = _pedidoitems.FirstOrDefault(p => p.ProdutoId == pedidoItem.ProdutoId);
-
-                //if(quantidadeItens + itemExistente.Quantidade > MAX_UNIDADES_ITEM) throw new DomainException($"Máximo de {MAX_UNIDADES_ITEM} unidades por produto.");
-
-                itemExistente.AdicionarUnidades(pedidoItem.Quantidade);
-                pedidoItem = itemExistente;
-
-                _pedidoitems.Remove(itemExistente);
+                var itemExistente = _pedidoItems.FirstOrDefault(p => p.ProdutoId == item.ProdutoId);
+                quantidadeItems += itemExistente.Quantidade;
             }
 
-            _pedidoitems.Add(pedidoItem);
-            //ValorTotal = PedidoItems.Sum(i => i.Quantidade * i.ValorUnitario);
+            if (quantidadeItems > MAX_UNIDADES_ITEM) throw new DomainException($"Máximo de {MAX_UNIDADES_ITEM} unidades por produto.");
+        }
+
+        public void AdicionarItem(PedidoItem item)
+        {
+            ValidarQuantidadeItemPermitida(item);
+
+            item.AssociarPedido(Id);
+
+            if (PedidoItemExistente(item))
+            {
+                var itemExistente = _pedidoItems.FirstOrDefault(p => p.ProdutoId == item.ProdutoId);
+                itemExistente.AdicionarUnidades(item.Quantidade);
+                item = itemExistente;
+
+                _pedidoItems.Remove(itemExistente);
+            }
+
+            _pedidoItems.Add(item);
             CalcularValorPedido();
         }
 
-        public void AtualizarItem(PedidoItem pedidoItem)
+        public void RemoverItem(PedidoItem item)
         {
-            ValidarPedidoItemInexistente(pedidoItem);
+            ValidarPedidoItemInexistente(item);
 
-            ValidarQuantidadeItemPermitida(pedidoItem);
+            _pedidoItems.Remove(item);
+            CalcularValorPedido();
+        }
 
-            var itemExistente = PedidoItems.FirstOrDefault(p => p.ProdutoId == pedidoItem.ProdutoId);
+        public void AtualizarItem(PedidoItem item)
+        {
+            ValidarQuantidadeItemPermitida(item);
+            ValidarPedidoItemInexistente(item);
+            item.AssociarPedido(Id);
 
-            _pedidoitems.Remove(itemExistente);
-            _pedidoitems.Add(pedidoItem);
+            var itemExistente = PedidoItems.FirstOrDefault(p => p.ProdutoId == item.ProdutoId);
+
+            _pedidoItems.Remove(itemExistente);
+            _pedidoItems.Add(item);
 
             CalcularValorPedido();
         }
 
-        public void RemoverItem(PedidoItem pedidoItem)
+        public void AtualizarUnidades(PedidoItem item, int unidades)
         {
-            ValidarPedidoItemInexistente(pedidoItem);
-
-            _pedidoitems.Remove(pedidoItem);
-
-            CalcularValorPedido();
+            item.AtualizarUnidades(unidades);
+            AtualizarItem(item);
         }
 
         public void TornarRascunho()
@@ -166,7 +156,7 @@ namespace NerdStore.Vendas.Domain
             {
                 var pedido = new Pedido
                 {
-                    ClienteId = clienteId
+                    ClienteId = clienteId,
                 };
 
                 pedido.TornarRascunho();
