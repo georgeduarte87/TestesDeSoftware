@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\TesteDeUnidade\Features.Tests\Features.Tests.csproj" />
     <ProjectReference Include="..\NerdStore.WebApp.MVC\NerdStore.WebApp.MVC.csproj" />
   </ItemGroup>
 
