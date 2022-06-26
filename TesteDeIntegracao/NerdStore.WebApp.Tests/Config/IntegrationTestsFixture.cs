@@ -7,6 +7,8 @@ using System.Text.RegularExpressions;
 using Bogus;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using NerdStore.WebApp.MVC.Models;
+using System.Net.Http.Json;
 
 namespace NerdStore.WebApp.Tests.Config
 {
@@ -24,6 +26,8 @@ namespace NerdStore.WebApp.Tests.Config
 
         public string UsuarioEmail;
         public string UsuarioSenha;
+
+        public string UsuarioToken;
 
         public readonly LojaAppFactory<TSStartup> Factory;
         public HttpClient Client;
@@ -49,6 +53,23 @@ namespace NerdStore.WebApp.Tests.Config
             UsuarioEmail = faker.Internet.Email().ToLower();
             UsuarioSenha = faker.Internet.Password(8, false, "", "@1Ab_");
         }
+
+        public async Task RealizarLoginApi()
+        {
+            var userData = new LoginViewModel
+            {
+                Email = "teste55@testes.com",
+                Senha = "Teste123!"
+            };
+
+            // Recriando cliente para evitar configurações de web
+            Client = Factory.CreateClient();
+
+            var response = await Client.PostAsJsonAsync("api/login", userData);
+            response.EnsureSuccessStatusCode();
+            UsuarioToken = await response.Content.ReadAsStringAsync();
+        }
+
 
         public async Task RealizarLoginWeb()
         {
