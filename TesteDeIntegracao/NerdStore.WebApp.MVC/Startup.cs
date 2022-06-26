@@ -49,7 +49,7 @@ namespace NerdStore.WebApp.MVC
 
             services.AddDatabaseDeveloperPageExceptionFilter();
             
-            /*
+            /* COmendado para funcionar nos testes de API
             services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
